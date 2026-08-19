@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>오늘 내가 반드시 해야 할 일</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>✅</text></svg>">
+<style>
+  :root {
+    --bg: #f7f7f5;
+    --card: #ffffff;
+    --text: #1c1c1a;
+    --muted: #6b6b66;
+    --line: #e8e8e2;
+    --accent: #c8643c;
+    --chip: #fbf1ec;
+    --shadow: 0 1px 2px rgba(0,0,0,.04), 0 12px 32px -12px rgba(0,0,0,.12);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #131316;
+      --card: #1d1d21;
+      --text: #ececea;
+      --muted: #9a9a94;
+      --line: #303038;
+      --accent: #e5906a;
+      --chip: #2a2320;
+      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 12px 32px -12px rgba(0,0,0,.6);
+    }
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1.25rem;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+                 "Malgun Gothic", "맑은 고딕", Roboto, sans-serif;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .card {
+    width: 100%;
+    max-width: 40rem;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+
+  /* ── 상단 일러스트 (장식용 SVG) ── */
+  .hero {
+    display: block;
+    width: 100%;
+    height: clamp(130px, 26vw, 190px);
+    object-fit: cover;
+  }
+
+  .body {
+    padding: clamp(1.5rem, 5vw, 2.75rem);
+  }
+
+  h1 {
+    margin: 0 0 0.6rem;
+    font-size: clamp(1.75rem, 5.5vw, 2.75rem);
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    line-height: 1.22;
+    word-break: keep-all;
+  }
+
+  .lead {
+    margin: 0;
+    color: var(--muted);
+    font-size: 1.0625rem;
+    word-break: keep-all;
+  }
+
+  h2 {
+    margin: 2.25rem 0 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .todo {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    counter-reset: todo;
+  }
+
+  .todo li {
+    counter-increment: todo;
+    display: flex;
+    gap: 0.95rem;
+    align-items: center;
+    padding: 0.95rem 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .todo li:last-child { border-bottom: none; }
+
+  /* 항목별 아이콘 */
+  .icon {
+    flex: none;
+    width: 2.5rem;
+    height: 2.5rem;
+    padding: 0.55rem;
+    border-radius: 12px;
+    background: var(--chip);
+    color: var(--accent);
+  }
+
+  .icon svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .label { flex: 1; font-size: 1.0625rem; }
+
+  .num {
+    flex: none;
+    font-size: 0.8125rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--muted);
+  }
+  .num::before { content: counter(todo, decimal-leading-zero); }
+</style>
+</head>
+<body>
+  <main class="card">
+
+    <!-- 상단 일러스트: 해 뜨는 아침 풍경 (외부 이미지 아님, 인라인 SVG) -->
+    <svg class="hero" viewBox="0 0 600 190" preserveAspectRatio="xMidYMid slice"
+         role="img" aria-label="아침 해가 떠오르는 언덕 일러스트">
+      <defs>
+        <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%"  stop-color="#f7c59f"/>
+          <stop offset="55%" stop-color="#ef9f6f"/>
+          <stop offset="100%" stop-color="#d9704a"/>
+        </linearGradient>
+        <linearGradient id="sun" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%"  stop-color="#fff3d6"/>
+          <stop offset="100%" stop-color="#ffd08a"/>
+        </linearGradient>
+      </defs>
+
+      <rect width="600" height="190" fill="url(#sky)"/>
+      <circle cx="430" cy="78" r="46" fill="url(#sun)" opacity=".95"/>
+      <circle cx="430" cy="78" r="66" fill="#fff6e2" opacity=".16"/>
+
+      <!-- 구름 -->
+      <g fill="#fff" opacity=".28">
+        <ellipse cx="120" cy="48" rx="52" ry="15"/>
+        <ellipse cx="152" cy="40" rx="34" ry="12"/>
+        <ellipse cx="510" cy="30" rx="40" ry="11"/>
+      </g>
+
+      <!-- 언덕 -->
+      <path d="M0 150 C 110 104, 190 152, 300 138 C 400 126, 500 158, 600 132 L600 190 L0 190Z"
+            fill="#b8563a" opacity=".55"/>
+      <path d="M0 168 C 130 134, 240 176, 360 160 C 470 146, 540 178, 600 164 L600 190 L0 190Z"
+            fill="#8f3f30" opacity=".75"/>
+    </svg>
+
+    <div class="body">
+      <!-- ↓ 제목 -->
+      <h1>오늘 내가 반드시 해야 할 일</h1>
+
+      <!-- ↓ 한 줄 소개 -->
+      <p class="lead">Claude Code로 만든 첫 번째 한 페이지 사이트입니다.</p>
+
+      <h2>체크리스트</h2>
+      <!-- ↓ 할 일 3가지 -->
+      <ol class="todo">
+        <li>
+          <span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24">
+            <path d="M6.5 6.5v11M3.5 9v6M17.5 6.5v11M20.5 9v6M6.5 12h11"/>
+          </svg></span>
+          <span class="label">하루 30분 운동</span>
+          <span class="num" aria-hidden="true"></span>
+        </li>
+        <li>
+          <span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24">
+            <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/>
+            <path d="M4 20.5A2.5 2.5 0 0 1 6.5 18H20v3H6.5"/>
+            <path d="M9 8h7M9 11.5h5"/>
+          </svg></span>
+          <span class="label">영어공부 30분 하기</span>
+          <span class="num" aria-hidden="true"></span>
+        </li>
+        <li>
+          <span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24">
+            <path d="M11 3l1.8 4.4L17.2 9.2l-4.4 1.8L11 15.4 9.2 11 4.8 9.2 9.2 7.4z"/>
+            <path d="M17.5 14.5l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9z"/>
+          </svg></span>
+          <span class="label">AI 실습</span>
+          <span class="num" aria-hidden="true"></span>
+        </li>
+      </ol>
+    </div>
+  </main>
+</body>
+</html>
