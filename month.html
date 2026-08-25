@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>월간 · 오늘 할일</title>
+<meta name="theme-color" content="#fcf9f5" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#161513" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>✅</text></svg>">
+
+<link rel="stylesheet" href="fonts.css">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+
+<header class="topbar">
+  <a class="iconbtn" href="index.html" aria-label="오늘로">
+    <svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>
+  </a>
+  <span class="brand">월간</span>
+  <span class="spacer"></span>
+</header>
+
+<main class="page">
+  <p class="kicker">MONTHLY INSIGHT</p>
+  <h1 class="display" id="title"></h1>
+
+  <section class="card scorecard" style="margin-top:1.5rem">
+    <div class="ringbig" id="ring">
+      <span class="val" id="pct">0%</span>
+      <span class="cap">COMPLETION</span>
+    </div>
+    <div class="statline">
+      <div><div class="n" id="mScore">0</div><div class="t">점수 합계</div></div>
+      <div><div class="n" id="mPerfect">0</div><div class="t">완벽한 날</div></div>
+      <div><div class="n bad" id="mBad">0</div><div class="t">어긴 횟수</div></div>
+    </div>
+  </section>
+
+  <div class="periodnav">
+    <button type="button" class="nav" id="prev" aria-label="이전 달">‹</button>
+    <span class="title" id="range"></span>
+    <button type="button" class="nav" id="next" aria-label="다음 달">›</button>
+  </div>
+
+  <section class="card">
+    <div class="dowhead" aria-hidden="true">
+      <span>일</span><span>월</span><span>화</span><span>수</span>
+      <span>목</span><span>금</span><span>토</span>
+    </div>
+    <div class="monthgrid" id="grid"></div>
+  </section>
+
+  <div class="sr-only" id="daydesc"></div>
+
+  <p class="note">날짜를 누르면 그날 항목을 체크할 수 있습니다.</p>
+</main>
+
+<nav class="tabbar" aria-label="주요 화면">
+  <a href="index.html">
+    <svg viewBox="0 0 24 24"><path d="M4.5 12.5l2.5 2.5 4.5-5.5"/><path d="M4.5 6.5h15M9 12.5h10.5M4.5 18.5h15"/></svg>
+    오늘
+  </a>
+  <a href="week.html">
+    <svg viewBox="0 0 24 24"><path d="M4 19V9M9.3 19V5M14.7 19v-7M20 19v-4"/></svg>
+    주간
+  </a>
+  <a href="month.html" aria-current="page">
+    <svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/></svg>
+    월간
+  </a>
+</nav>
+
+<script src="app.js"></script>
+<script>
+(function () {
+  var today = App.today();
+  var monthStart = App.startOfMonth(today);
+
+  var titleEl = document.getElementById('title');
+  var rangeEl = document.getElementById('range');
+  var gridEl = document.getElementById('grid');
+  var descEl = document.getElementById('daydesc');
+  var ringEl = document.getElementById('ring');
+  var pctEl = document.getElementById('pct');
+  var prevBtn = document.getElementById('prev');
+  var nextBtn = document.getElementById('next');
+
+  var sheet = App.makeSheet(function () { render(); });
+
+  function monthDays() {
+    var n = App.daysInMonth(monthStart), out = [], i;
+    for (i = 1; i <= n; i++) out.push(new Date(monthStart.getFullYear(), monthStart.getMonth(), i));
+    return out;
+  }
+
+  function render() {
+    titleEl.textContent = monthStart.getFullYear() + '년 ' + (monthStart.getMonth() + 1) + '월';
+    rangeEl.textContent = (monthStart.getMonth() + 1) + '월';
+    nextBtn.disabled = +monthStart >= +App.startOfMonth(today);
+
+    gridEl.innerHTML = '';
+    descEl.innerHTML = '';
+
+    // 1일 앞의 빈칸
+    var blanks = monthStart.getDay(), b;
+    for (b = 0; b < blanks; b++) {
+      var sp = document.createElement('span');
+      sp.className = 'daycell blank';
+      sp.setAttribute('aria-hidden', 'true');
+      gridEl.appendChild(sp);
+    }
+
+    var sumScore = 0, sumMax = 0, sumBad = 0, perfect = 0;
+
+    monthDays().forEach(function (d) {
+      var future = d > today;
+      var s = App.stats(d);
+      if (!future) {
+        sumScore += s.score; sumMax += s.max; sumBad += s.violated.length;
+        if (s.score === s.max) perfect++;
+      }
+
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'daycell';
+      if (future) btn.className += ' future';
+      if (App.sameDay(d, today)) btn.className += ' is-today';
+      if (!future && s.score === s.max) btn.className += ' full';
+      if (!future && s.violated.length) btn.className += ' hasbad';
+      btn.disabled = future;
+
+      /* 버튼 이름은 눈에 보이는 날짜 숫자 그대로 두고,
+         자세한 설명은 sr-only 영역을 aria-describedby로 가리킵니다. */
+      var descId = 'dd-' + App.ymd(d);
+      btn.setAttribute('aria-describedby', descId);
+      var desc = document.createElement('span');
+      desc.id = descId;
+      desc.textContent = (d.getMonth() + 1) + '월 ' + d.getDate() + '일 ' + App.DOW[d.getDay()] + '요일, ' +
+        (future ? '아직 오지 않은 날'
+                : '진척도 ' + App.pctText(s.pct) +
+                  (s.violated.length ? ', 어김 ' + s.violated.length + '개' : ''));
+      descEl.appendChild(desc);
+
+      btn.appendChild(App.makeRing(future ? 0 : s.pct, d.getDate()));
+
+      var dot = document.createElement('span');
+      dot.className = 'todaydot';
+      btn.appendChild(dot);
+
+      btn.addEventListener('click', function () { sheet.open(d, btn); });
+      gridEl.appendChild(btn);
+    });
+
+    var p = sumMax ? sumScore / sumMax : 0;
+    ringEl.style.setProperty('--p', p);
+    pctEl.textContent = sumMax ? App.pctText(p) : '—';
+    document.getElementById('mScore').textContent = sumMax ? sumScore + ' / ' + sumMax : '—';
+    document.getElementById('mPerfect').textContent = perfect;
+    document.getElementById('mBad').textContent = sumBad;
+  }
+
+  prevBtn.addEventListener('click', function () {
+    monthStart = App.addMonths(monthStart, -1);
+    render();
+  });
+  nextBtn.addEventListener('click', function () {
+    monthStart = App.addMonths(monthStart, 1);
+    render();
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>

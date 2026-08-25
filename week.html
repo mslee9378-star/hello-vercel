@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>주간 · 오늘 할일</title>
+<meta name="theme-color" content="#fcf9f5" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#161513" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>✅</text></svg>">
+
+<link rel="stylesheet" href="fonts.css">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+
+<header class="topbar">
+  <a class="iconbtn" href="index.html" aria-label="오늘로">
+    <svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>
+  </a>
+  <span class="brand">주간</span>
+  <span class="spacer"></span>
+</header>
+
+<main class="page">
+  <p class="kicker" id="kicker">WEEKLY RHYTHM</p>
+  <h1 class="display" id="title"></h1>
+
+  <div class="periodnav">
+    <button type="button" class="nav" id="prev" aria-label="이전 주">‹</button>
+    <span class="title" id="range"></span>
+    <button type="button" class="nav" id="next" aria-label="다음 주">›</button>
+  </div>
+
+  <!-- 주간 진척도 요약 -->
+  <section class="card">
+    <div class="rhythm" id="rhythm" aria-hidden="true"></div>
+    <div class="statline">
+      <div><div class="n" id="wPct">0%</div><div class="t">주간 진척도</div></div>
+      <div><div class="n" id="wScore">0</div><div class="t">점수 합계</div></div>
+      <div><div class="n bad" id="wBad">0</div><div class="t">어긴 횟수</div></div>
+    </div>
+  </section>
+
+  <div class="seclabel">
+    <span class="badge" aria-hidden="true">
+      <svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/></svg>
+    </span>
+    <h2>날짜별 기록</h2>
+    <span class="rule"></span>
+  </div>
+
+  <ul class="daylist" id="days"></ul>
+
+  <p class="note">날짜를 누르면 그날 항목을 고칠 수 있습니다.</p>
+</main>
+
+<nav class="tabbar" aria-label="주요 화면">
+  <a href="index.html">
+    <svg viewBox="0 0 24 24"><path d="M4.5 12.5l2.5 2.5 4.5-5.5"/><path d="M4.5 6.5h15M9 12.5h10.5M4.5 18.5h15"/></svg>
+    오늘
+  </a>
+  <a href="week.html" aria-current="page">
+    <svg viewBox="0 0 24 24"><path d="M4 19V9M9.3 19V5M14.7 19v-7M20 19v-4"/></svg>
+    주간
+  </a>
+  <a href="month.html">
+    <svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/></svg>
+    월간
+  </a>
+</nav>
+
+<script src="app.js"></script>
+<script>
+(function () {
+  var today = App.today();
+  var weekStart = App.startOfWeek(today);
+
+  var titleEl = document.getElementById('title');
+  var rangeEl = document.getElementById('range');
+  var rhythmEl = document.getElementById('rhythm');
+  var daysEl = document.getElementById('days');
+  var prevBtn = document.getElementById('prev');
+  var nextBtn = document.getElementById('next');
+
+  var sheet = App.makeSheet(function () { render(); });
+
+  function weekDays() {
+    var out = [];
+    for (var i = 0; i < 7; i++) out.push(App.addDays(weekStart, i));
+    return out;
+  }
+
+  function tag(text, cls) {
+    var s = document.createElement('span');
+    s.className = 'tag' + (cls ? ' ' + cls : '');
+    s.textContent = text;
+    return s;
+  }
+
+  function render() {
+    var days = weekDays();
+    var end = App.addDays(weekStart, 6);
+
+    titleEl.textContent = (weekStart.getMonth() + 1) + '월 ' + weekStart.getDate() + '일 – ' +
+      (end.getMonth() === weekStart.getMonth() ? '' : (end.getMonth() + 1) + '월 ') +
+      end.getDate() + '일';
+    rangeEl.textContent = weekStart.getFullYear() + '년 ' + (weekStart.getMonth() + 1) + '월';
+    nextBtn.disabled = +weekStart >= +App.startOfWeek(today);
+
+    /* ── 요일 리듬 막대 ── */
+    rhythmEl.innerHTML = '';
+    var sumScore = 0, sumMax = 0, sumBad = 0;
+
+    days.forEach(function (d) {
+      var future = d > today;
+      var s = App.stats(d);
+      if (!future) { sumScore += s.score; sumMax += s.max; sumBad += s.violated.length; }
+
+      var bar = document.createElement('div');
+      bar.className = 'bar';
+
+      var fill = document.createElement('div');
+      fill.className = 'fill' + (future || !s.recorded ? ' none' : (s.violated.length ? ' hasbad' : ''));
+      fill.style.height = (future ? 4 : Math.max(4, s.pct * 100)) + '%';
+
+      var lab = document.createElement('div');
+      lab.className = 'd' + (future ? ' dim' : '');
+      lab.textContent = App.DOW[d.getDay()];
+
+      bar.appendChild(fill);
+      bar.appendChild(lab);
+      rhythmEl.appendChild(bar);
+    });
+
+    document.getElementById('wPct').textContent =
+      sumMax ? Math.round(sumScore / sumMax * 100) + '%' : '—';
+    document.getElementById('wScore').textContent = sumMax ? sumScore + ' / ' + sumMax : '—';
+    document.getElementById('wBad').textContent = sumBad;
+
+    /* ── 날짜별 상세 ── */
+    daysEl.innerHTML = '';
+    days.forEach(function (d) {
+      var future = d > today;
+      var s = App.stats(d);
+
+      var li = document.createElement('li');
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'dayrow' + (App.sameDay(d, today) ? ' is-today' : '');
+      btn.disabled = future;
+
+      var top = document.createElement('div');
+      top.className = 'top';
+
+      var name = document.createElement('span');
+      name.className = 'dname';
+      name.textContent = (d.getMonth() + 1) + '월 ' + d.getDate() + '일 (' + App.DOW[d.getDay()] + ')';
+      top.appendChild(name);
+
+      if (App.sameDay(d, today)) {
+        var badge = document.createElement('span');
+        badge.className = 'dtoday';
+        badge.textContent = '오늘';
+        top.appendChild(badge);
+      }
+
+      var pct = document.createElement('span');
+      pct.className = 'dpct';
+      pct.textContent = future ? '—' : s.score + ' / ' + s.max + ' · ' + App.pctText(s.pct);
+      top.appendChild(pct);
+      btn.appendChild(top);
+
+      var track = document.createElement('div');
+      track.className = 'track';
+      var fill = document.createElement('i');
+      fill.style.width = (future ? 0 : s.pct * 100) + '%';
+      if (s.violated.length) fill.className = 'bad';
+      track.appendChild(fill);
+      btn.appendChild(track);
+
+      if (future) {
+        var soon = document.createElement('div');
+        soon.className = 'tags';
+        soon.appendChild(tag('아직 오지 않은 날', 'none'));
+        btn.appendChild(soon);
+      } else if (!s.recorded) {
+        var non = document.createElement('div');
+        non.className = 'tags';
+        non.appendChild(tag('기록 없음', 'none'));
+        btn.appendChild(non);
+      } else {
+        // 해야 되는데 안 한 일
+        var l1 = document.createElement('span');
+        l1.className = 'taglabel';
+        l1.textContent = '안 한 일';
+        btn.appendChild(l1);
+        var t1 = document.createElement('div');
+        t1.className = 'tags';
+        if (s.missed.length) {
+          s.missed.forEach(function (it) { t1.appendChild(tag(it.label)); });
+        } else {
+          t1.appendChild(tag('전부 해냈습니다', 'none'));
+        }
+        btn.appendChild(t1);
+
+        // 하지 말아야 하는데 한 일
+        var l2 = document.createElement('span');
+        l2.className = 'taglabel';
+        l2.textContent = '어긴 일';
+        btn.appendChild(l2);
+        var t2 = document.createElement('div');
+        t2.className = 'tags';
+        if (s.violated.length) {
+          s.violated.forEach(function (it) { t2.appendChild(tag(it.label, 'bad')); });
+        } else {
+          t2.appendChild(tag('없음', 'none'));
+        }
+        btn.appendChild(t2);
+      }
+
+      btn.addEventListener('click', function () { sheet.open(d, btn); });
+      li.appendChild(btn);
+      daysEl.appendChild(li);
+    });
+  }
+
+  prevBtn.addEventListener('click', function () {
+    weekStart = App.addDays(weekStart, -7);
+    render();
+  });
+  nextBtn.addEventListener('click', function () {
+    weekStart = App.addDays(weekStart, 7);
+    render();
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
