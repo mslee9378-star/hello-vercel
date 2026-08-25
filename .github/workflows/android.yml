@@ -1,0 +1,59 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build web assets and sync to Android
+        run: npm run cap:sync
+
+      # 기존에 설치된 앱 위에 덮어쓰기 설치가 되려면 원본과 같은 키로 서명해야 한다.
+      # 없으면 Gradle 이 새 debug 키를 만들어 서명이 어긋나고, 재설치 시 저장된 데이터가 날아간다.
+      - name: Restore debug keystore
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_DEBUG_KEYSTORE_B64 }}
+        run: |
+          if [ -z "$KEYSTORE_B64" ]; then
+            echo "::error::secret ANDROID_DEBUG_KEYSTORE_B64 가 없습니다. 이대로 빌드하면 서명이 달라져 기존 앱을 덮어쓸 수 없습니다."
+            exit 1
+          fi
+          mkdir -p ~/.android
+          printf '%s' "$KEYSTORE_B64" | base64 -d > ~/.android/debug.keystore
+
+      - name: Assemble debug APK
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+
+      - name: Rename APK
+        run: cp android/app/build/outputs/apk/debug/app-debug.apk dailyplan.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dailyplan-apk
+          path: dailyplan.apk
+          if-no-files-found: error

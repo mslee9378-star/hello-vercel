@@ -1,1 +1,18 @@
 .vercel
+
+# Node
+node_modules/
+
+# Capacitor: www/ 는 scripts/build-www.mjs 가 매번 생성
+www/
+
+# Android 빌드 산출물
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/capacitor-cordova-android-plugins/
+
+# 서명 키는 절대 커밋하지 않음 (이 저장소는 public)
+*.keystore
+*.jks

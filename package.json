@@ -1,0 +1,17 @@
+{
+  "name": "todayplan",
+  "version": "1.0.0",
+  "private": true,
+  "description": "오늘 할일 - 웹 페이지와 Android 앱(Capacitor)",
+  "scripts": {
+    "www": "node scripts/build-www.mjs",
+    "cap:sync": "npm run www && cap sync android"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.5.0"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.5.0",
+    "@capacitor/core": "^8.5.0"
+  }
+}
