@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>월간 · 오늘 할일</title>
-<meta name="theme-color" content="#fcf9f5" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#161513" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#fafafa" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#09090b" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>✅</text></svg>">
 
 <link rel="stylesheet" href="fonts.css">
@@ -22,14 +22,16 @@
 </header>
 
 <main class="page">
-  <p class="kicker">MONTHLY INSIGHT</p>
+  <p class="kicker">월간 기록</p>
   <h1 class="display" id="title"></h1>
 
-  <section class="card scorecard" style="margin-top:1.5rem">
-    <div class="ringbig" id="ring">
-      <span class="val" id="pct">0%</span>
-      <span class="cap">COMPLETION</span>
+  <section class="hero">
+    <div class="herotop">
+      <span class="hlabel">이번 달 진척도</span>
+      <span class="hval" id="pct">0%</span>
     </div>
+    <div class="hbar" id="ring"><i></i></div>
+    <p class="mood" id="mMood"></p>
     <div class="statline">
       <div><div class="n" id="mScore">0</div><div class="t">점수 합계</div></div>
       <div><div class="n" id="mPerfect">0</div><div class="t">완벽한 날</div></div>
@@ -111,14 +113,16 @@
       gridEl.appendChild(sp);
     }
 
-    var sumScore = 0, sumMax = 0, sumBad = 0, perfect = 0;
+    var sumScore = 0, sumMax = 0, sumBad = 0, perfect = 0, anyRecorded = false;
 
     monthDays().forEach(function (d) {
       var future = d > today;
       var s = App.stats(d);
+      var mood = (!future && s.recorded) ? App.tier(s.pct) : null;
       if (!future) {
         sumScore += s.score; sumMax += s.max; sumBad += s.violated.length;
         if (s.score === s.max) perfect++;
+        if (s.recorded) anyRecorded = true;
       }
 
       var btn = document.createElement('button');
@@ -128,6 +132,8 @@
       if (App.sameDay(d, today)) btn.className += ' is-today';
       if (!future && s.score === s.max) btn.className += ' full';
       if (!future && s.violated.length) btn.className += ' hasbad';
+      var memo = !future && App.hasMemo(d);
+      if (memo) btn.className += ' hasmemo';
       btn.disabled = future;
 
       /* 버튼 이름은 눈에 보이는 날짜 숫자 그대로 두고,
@@ -138,11 +144,12 @@
       desc.id = descId;
       desc.textContent = (d.getMonth() + 1) + '월 ' + d.getDate() + '일 ' + App.DOW[d.getDay()] + '요일, ' +
         (future ? '아직 오지 않은 날'
-                : '진척도 ' + App.pctText(s.pct) +
-                  (s.violated.length ? ', 어김 ' + s.violated.length + '개' : ''));
+                : (mood ? mood.label + ', ' : '기록 없음, ') + '진척도 ' + App.pctText(s.pct) +
+                  (s.violated.length ? ', 어김 ' + s.violated.length + '개' : '') +
+                  (memo ? ', 메모 있음' : ''));
       descEl.appendChild(desc);
 
-      btn.appendChild(App.makeRing(future ? 0 : s.pct, d.getDate()));
+      btn.appendChild(App.makeRing(future ? 0 : s.pct, d.getDate(), mood ? mood.emoji : ''));
 
       var dot = document.createElement('span');
       dot.className = 'todaydot';
@@ -155,6 +162,8 @@
     var p = sumMax ? sumScore / sumMax : 0;
     ringEl.style.setProperty('--p', p);
     pctEl.textContent = sumMax ? App.pctText(p) : '—';
+    App.paintMood(document.getElementById('mMood'),
+      anyRecorded ? App.tier(p) : null, '이번 달은 아직 기록이 없습니다');
     document.getElementById('mScore').textContent = sumMax ? sumScore + ' / ' + sumMax : '—';
     document.getElementById('mPerfect').textContent = perfect;
     document.getElementById('mBad').textContent = sumBad;

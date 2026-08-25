@@ -3,7 +3,7 @@
   "appName": "오늘 할일",
   "webDir": "www",
   "android": {
-    "backgroundColor": "#fcf9f5"
+    "backgroundColor": "#fafafa"
   },
   "server": {
     "androidScheme": "https"

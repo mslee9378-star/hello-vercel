@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>오늘 할일 · 미래를 위한 투자</title>
+<title>오늘 할일 · 미래의 나를 위한 투자</title>
 
-<meta name="theme-color" content="#fcf9f5" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#161513" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#fafafa" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#09090b" media="(prefers-color-scheme: dark)">
 <meta name="apple-mobile-web-app-title" content="오늘 할일">
 
 
@@ -26,15 +26,20 @@
 </header>
 
 <main class="page">
-  <h1 class="brandtitle">오늘 할일</h1>
-  <p class="brandsub">미래를 위한 투자</p>
-  <p class="dateline" id="dateline"></p>
+  <p class="kicker">오늘</p>
+  <h1 class="display" id="dateline"></h1>
+  <p class="brandsub">미래의 나를 위한 투자</p>
 
   <!-- 오늘의 진척도 -->
-  <section class="card scorecard" aria-labelledby="scoreCap" style="margin-top:2rem">
-    <div class="ringbig" id="ring">
-      <span class="val" id="pct">0%</span>
-      <span class="cap" id="scoreCap">오늘의 진척도</span>
+  <section class="hero" aria-labelledby="scoreCap">
+    <div class="herotop">
+      <span class="hlabel" id="scoreCap">오늘의 진척도</span>
+      <span class="hval" id="pct">0%</span>
+    </div>
+    <div class="hbar" id="ring"><i></i></div>
+    <div class="moodrow">
+      <p class="mood" id="mood"></p>
+      <span class="streak" id="streak" hidden></span>
     </div>
     <div class="statline">
       <div><div class="n" id="nDone">0</div><div class="t">해낸 일</div></div>
@@ -46,16 +51,11 @@
   <!-- 체크리스트 3그룹 (app.js가 생성) -->
   <div id="list"></div>
 
-  <!-- 기타 메모 -->
-  <section class="card memowrap" style="margin-top:2rem">
-    <div class="memohead">
-      <label for="memo">오늘의 기억</label>
-      <span class="memostate" id="memostate" aria-live="polite"></span>
-    </div>
-    <textarea id="memo" class="memo" rows="3" placeholder="남겨 두고 싶은 것이 있다면…"></textarea>
-  </section>
+  <!-- 오늘의 기억 (app.js가 생성) -->
+  <div id="memoslot"></div>
 
-  <p class="note">체크와 메모는 이 기기의 브라우저에 저장됩니다.</p>
+  <!-- 기록 백업 (app.js가 생성) -->
+  <div id="backupslot"></div>
 </main>
 
 <nav class="tabbar" aria-label="주요 화면">
@@ -83,6 +83,8 @@
   var nDone = document.getElementById('nDone');
   var nMiss = document.getElementById('nMiss');
   var nBad = document.getElementById('nBad');
+  var moodEl = document.getElementById('mood');
+  var streakEl = document.getElementById('streak');
 
   // 연도는 빼고 담백하게
   document.getElementById('dateline').textContent =
@@ -91,14 +93,28 @@
   function refresh() {
     var s = App.stats(today);
     ringEl.style.setProperty('--p', s.pct);
+    ringEl.classList.toggle('hasbad', s.violated.length > 0);
     pctEl.textContent = App.pctText(s.pct);
+    App.paintMood(moodEl, s.recorded ? App.tier(s.pct) : null, '아직 체크한 것이 없습니다');
+
+    // 하루짜리는 연속이 아니므로 이틀부터 보여 줍니다
+    var run = App.streak();
+    streakEl.hidden = run < 2;
+    streakEl.textContent = '초록불 ' + run + '일 연속';
     nDone.textContent = s.done.length;
     nMiss.textContent = s.missed.length;
     nBad.textContent = s.violated.length;
   }
 
   var list = App.makeChecklist(document.getElementById('list'), refresh);
-  var memo = App.bindMemo(document.getElementById('memo'), document.getElementById('memostate'));
+  var memo = App.makeMemo(document.getElementById('memoslot'), '오늘의 기억');
+
+  /* 들여오기로 오늘 기록이 바뀌었을 수 있으니 화면을 다시 그립니다. */
+  App.makeBackup(document.getElementById('backupslot'), function () {
+    list.load(today);
+    memo.load(today);
+    refresh();
+  });
 
   list.load(today);
   memo.load(today);

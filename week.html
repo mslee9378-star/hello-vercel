@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>주간 · 오늘 할일</title>
-<meta name="theme-color" content="#fcf9f5" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#161513" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#fafafa" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#09090b" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>✅</text></svg>">
 
 <link rel="stylesheet" href="fonts.css">
@@ -22,7 +22,7 @@
 </header>
 
 <main class="page">
-  <p class="kicker" id="kicker">WEEKLY RHYTHM</p>
+  <p class="kicker" id="kicker">주간 기록</p>
   <h1 class="display" id="title"></h1>
 
   <div class="periodnav">
@@ -32,10 +32,14 @@
   </div>
 
   <!-- 주간 진척도 요약 -->
-  <section class="card">
+  <section class="hero">
+    <div class="herotop">
+      <span class="hlabel">주간 진척도</span>
+      <span class="hval" id="wPct">0%</span>
+    </div>
     <div class="rhythm" id="rhythm" aria-hidden="true"></div>
+    <p class="mood" id="wMood"></p>
     <div class="statline">
-      <div><div class="n" id="wPct">0%</div><div class="t">주간 진척도</div></div>
       <div><div class="n" id="wScore">0</div><div class="t">점수 합계</div></div>
       <div><div class="n bad" id="wBad">0</div><div class="t">어긴 횟수</div></div>
     </div>
@@ -109,12 +113,15 @@
 
     /* ── 요일 리듬 막대 ── */
     rhythmEl.innerHTML = '';
-    var sumScore = 0, sumMax = 0, sumBad = 0;
+    var sumScore = 0, sumMax = 0, sumBad = 0, anyRecorded = false;
 
     days.forEach(function (d) {
       var future = d > today;
       var s = App.stats(d);
-      if (!future) { sumScore += s.score; sumMax += s.max; sumBad += s.violated.length; }
+      if (!future) {
+        sumScore += s.score; sumMax += s.max; sumBad += s.violated.length;
+        if (s.recorded) anyRecorded = true;
+      }
 
       var bar = document.createElement('div');
       bar.className = 'bar';
@@ -136,6 +143,8 @@
       sumMax ? Math.round(sumScore / sumMax * 100) + '%' : '—';
     document.getElementById('wScore').textContent = sumMax ? sumScore + ' / ' + sumMax : '—';
     document.getElementById('wBad').textContent = sumBad;
+    App.paintMood(document.getElementById('wMood'),
+      anyRecorded ? App.tier(sumScore / sumMax) : null, '이번 주는 아직 기록이 없습니다');
 
     /* ── 날짜별 상세 ── */
     daysEl.innerHTML = '';
@@ -152,6 +161,14 @@
       var top = document.createElement('div');
       top.className = 'top';
 
+      if (!future && s.recorded) {
+        var em = document.createElement('span');
+        em.className = 'dayemoji';
+        em.setAttribute('aria-hidden', 'true');
+        em.textContent = App.tier(s.pct).emoji;
+        top.appendChild(em);
+      }
+
       var name = document.createElement('span');
       name.className = 'dname';
       name.textContent = (d.getMonth() + 1) + '월 ' + d.getDate() + '일 (' + App.DOW[d.getDay()] + ')';
@@ -162,6 +179,14 @@
         badge.className = 'dtoday';
         badge.textContent = '오늘';
         top.appendChild(badge);
+      }
+
+      /* 메모는 일간 화면에만 있어서, 표시가 없으면 날짜를 기억하지 못하는 한 못 찾습니다. */
+      if (!future && App.hasMemo(d)) {
+        var memo = document.createElement('span');
+        memo.className = 'dmemo';
+        memo.textContent = '메모';
+        top.appendChild(memo);
       }
 
       var pct = document.createElement('span');
